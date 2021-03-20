@@ -128,7 +128,7 @@ int main(void)
   led.addLED(LedsList::angleGreaterThan15deg, OutputList::LED_R1, true);
   Drivers::Memory memory(&Drivers::i2c3, &Drivers::gpio, 0xA0, OutputList::MemoryWriteProtect, HAL_Delay);
   Drivers::nRF24SinglePlex radio(7, 0b10101110, Drivers::time, false, &Drivers::spi2, &Drivers::gpio, OutputList::RadioCE, OutputList::RadioCSN, InterruptInputList::RadioIRQ, HAL_Delay);
-  Drivers::RadioParser radioParser(&radio, Drivers::RadioTrybe::Drone);
+  Drivers::RadioParser radioParser(&radio, Drivers::RadioMode::Drone);
   Drivers::LSM6DS33 lsm6ds33(&Drivers::spi1, OutputList::SensorSS, akcelerometerAndGyroskopeDataReady, magnetometerDataReady, HAL_Delay, Drivers::IMUsensorIfc::RottatedAxis::X);
   AHRS ahrs(lsm6ds33.akcelerometr, lsm6ds33.gyroskope, nullptr);
   const uint16_t enginesMin[4]{2200, 2000, 2000, 2000};

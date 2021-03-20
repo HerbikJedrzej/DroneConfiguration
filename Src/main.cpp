@@ -134,7 +134,7 @@ int main(void)
   Drivers::MPU6050 mpu(&Drivers::i2c1, 0xD0, akcelerometerAndGyroskopeDataReady, magnetometerDataReady, HAL_Delay);
   MiniDronEngine engines(enginesPower, 4);
   QuatroEngineControl engineControl(&engines);
-  Drivers::RadioParser radioParser(&radio, Drivers::RadioTrybe::Drone);
+  Drivers::RadioParser radioParser(&radio, Drivers::RadioMode::Drone);
   AHRS ahrs(mpu.akcelerometr, mpu.gyroskope, nullptr, 45);
   PID pidX;
   PID pidY;

@@ -151,7 +151,7 @@ int main(void){
   Drivers::Memory memory(&Drivers::i2c3, &Drivers::gpio, 0xA0, OutputList::MemoryWriteProtect, HAL_Delay);
   // Drivers::nRF24SinglePlex radio1(7, 0b10101111, Drivers::time, false, &Drivers::spi2, &Drivers::gpio, OutputList::RadioCE1, OutputList::RadioCSN1, InterruptInputList::RadioIRQ1, HAL_Delay);
   Drivers::nRF24SinglePlex radio(7, 0b10101110, Drivers::time, false, &Drivers::spi3, &Drivers::gpio, OutputList::RadioCE2, OutputList::RadioCSN2, InterruptInputList::RadioIRQ2, HAL_Delay);
-  Drivers::RadioParser radioParser(&radio, Drivers::RadioTrybe::Drone);
+  Drivers::RadioParser radioParser(&radio, Drivers::RadioMode::Drone);
   Drivers::MPU6050 mpu6050(&Drivers::i2c1, 0xD0, akcelerometerAndGyroskopeDataReady, magnetometerDataReady, HAL_Delay, Drivers::IMUsensorIfc::RottatedAxis::X);
   AHRS ahrs(mpu6050.akcelerometr, mpu6050.gyroskope, nullptr);
   AltitudeProvider altitudeProvider(0.03);

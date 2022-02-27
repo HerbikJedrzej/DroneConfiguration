@@ -131,11 +131,11 @@ int main(void)
   }
   Drivers::nRF24SinglePlex radio(7, 0b10101110, Drivers::time, false, &Drivers::spi2, &Drivers::gpio, OutputList::RadioCE, OutputList::RadioCSN, InterruptInputList::RadioIRQ, HAL_Delay);
   Drivers::Memory memory(&Drivers::i2c3, &Drivers::gpio, 0xA0, OutputList::MemoryWriteProtect, HAL_Delay);
-  Drivers::MPU6050 mpu(&Drivers::i2c1, 0xD0, akcelerometerAndGyroskopeDataReady, magnetometerDataReady, HAL_Delay);
+  Drivers::MPU6050 mpu(&Drivers::i2c1, 0xD0, akcelerometerAndGyroskopeDataReady, magnetometerDataReady, HAL_Delay, Drivers::IMUsensorIfc::RottatedAxis::X);
   MiniDronEngine engines(enginesPower, 4);
   QuatroEngineControl engineControl(&engines);
   Drivers::RadioParser radioParser(&radio, Drivers::RadioMode::Drone);
-  AHRS ahrs(mpu.akcelerometr, mpu.gyroskope, nullptr, 45);
+  AHRS ahrs(mpu.akcelerometr, mpu.gyroskope, nullptr, -45);
   PID pidX;
   PID pidY;
   PID pidZ;

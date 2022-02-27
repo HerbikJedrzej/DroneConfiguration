@@ -129,7 +129,7 @@ int main(void)
   Drivers::Memory memory(&Drivers::i2c3, &Drivers::gpio, 0xA0, OutputList::MemoryWriteProtect, HAL_Delay);
   Drivers::nRF24SinglePlex radio(7, 0b10101110, Drivers::time, false, &Drivers::spi2, &Drivers::gpio, OutputList::RadioCE, OutputList::RadioCSN, InterruptInputList::RadioIRQ, HAL_Delay);
   Drivers::RadioParser radioParser(&radio, Drivers::RadioMode::Drone);
-  Drivers::LSM6DS33 lsm6ds33(&Drivers::spi1, OutputList::SensorSS, akcelerometerAndGyroskopeDataReady, magnetometerDataReady, HAL_Delay, Drivers::IMUsensorIfc::RottatedAxis::X);
+  Drivers::LSM6DS33 lsm6ds33(&Drivers::spi1, OutputList::SensorSS, akcelerometerAndGyroskopeDataReady, magnetometerDataReady, HAL_Delay);
   AHRS ahrs(lsm6ds33.akcelerometr, lsm6ds33.gyroskope, nullptr);
   const uint16_t enginesMin[4]{2200, 2000, 2000, 2000};
   const uint16_t enginesMax[4]{3340, 2900, 2900, 2900};

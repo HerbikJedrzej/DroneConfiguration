@@ -149,12 +149,21 @@ int main(void){
   bool barometerFlag;
   Drivers::SPL06_007 barometer(&Drivers::i2c2, 0xEC, barometerFlag, HAL_Delay, InterruptInputList::BarometerIRQ, &Drivers::gpio);
   Drivers::Memory memory(&Drivers::i2c3, &Drivers::gpio, 0xA0, OutputList::MemoryWriteProtect, HAL_Delay);
+  constexpr uint8_t memoryMeasurementsSlotsNumber = 5;
+  MeasurementManager::MemorySlot memoryMeasurementsSlots[memoryMeasurementsSlotsNumber] = {
+    MeasurementManager::MemorySlot(memoryMap::slot1_begin, memoryMap::slot1_end),
+    MeasurementManager::MemorySlot(memoryMap::slot2_begin, memoryMap::slot2_end),
+    MeasurementManager::MemorySlot(memoryMap::slot3_begin, memoryMap::slot3_end),
+    MeasurementManager::MemorySlot(memoryMap::slot4_begin, memoryMap::slot4_end),
+    MeasurementManager::MemorySlot(memoryMap::slot5_begin, memoryMap::slot5_end),
+  };
+  MeasurementManager measurementManager(&memory, memoryMeasurementsSlots, memoryMeasurementsSlotsNumber);
   // Drivers::nRF24SinglePlex radio1(7, 0b10101111, Drivers::time, false, &Drivers::spi2, &Drivers::gpio, OutputList::RadioCE1, OutputList::RadioCSN1, InterruptInputList::RadioIRQ1, HAL_Delay);
   Drivers::nRF24SinglePlex radio(7, 0b10101110, Drivers::time, false, &Drivers::spi3, &Drivers::gpio, OutputList::RadioCE2, OutputList::RadioCSN2, InterruptInputList::RadioIRQ2, HAL_Delay);
   Drivers::RadioParser radioParser(&radio, Drivers::RadioMode::Drone);
   Drivers::MPU6050 mpu6050(&Drivers::i2c1, 0xD0, akcelerometerAndGyroskopeDataReady, magnetometerDataReady, HAL_Delay);
   AHRS ahrs(mpu6050.akcelerometr, mpu6050.gyroskope, nullptr);
-  AltitudeProvider altitudeProvider(0.03);
+  AltitudeProvider altitudeProvider(&barometer, 0.3);
   MiniDronEngine engines(enginesPower, 8);
   OctoEngineControl engineControl(&engines);
   PID pidX;
@@ -178,6 +187,7 @@ int main(void){
     &barometer,
     &altitudeProvider,
     &battery,
+    &measurementManager,
     [](const char* text, unsigned int size){
       while(HAL_UART_GetState(&huart1) != HAL_UART_STATE_READY);
       if(HAL_UART_Transmit(&huart1, (uint8_t*)text, size, 100) == HAL_OK)
@@ -193,8 +203,8 @@ int main(void){
         Drivers::gpio.pin(OutputList::LED_G1, !Drivers::gpio.pin(OutputList::LED_G1));
       Drivers::gpio.pin(OutputList::LED_G2, !driversGroup.radio->isComunicationCorrect());
       radioParser.run();
-      altitudeProvider.run(ahrs.getHorizontalAkceleration() + 10.00, fmax(ahrs.getHorizontalAkcelerationVariation(), 0.1), barometer.altitude);
       ahrs.run(globalStruct.angleOffsetAxisX, globalStruct.angleOffsetAxisY);
+      altitudeProvider.run();
       mainLoop(&Drivers::gpio, globalStruct, driversGroup, HAL_Delay);
       TIM3->CCR4 = enginesPower[0];
       TIM2->CCR1 = enginesPower[1];

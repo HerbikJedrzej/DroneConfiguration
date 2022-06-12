@@ -131,6 +131,15 @@ int main(void)
   }
   Drivers::nRF24SinglePlex radio(7, 0b10101110, Drivers::time, false, &Drivers::spi2, &Drivers::gpio, OutputList::RadioCE, OutputList::RadioCSN, InterruptInputList::RadioIRQ, HAL_Delay);
   Drivers::Memory memory(&Drivers::i2c3, &Drivers::gpio, 0xA0, OutputList::MemoryWriteProtect, HAL_Delay);
+  constexpr uint8_t memoryMeasurementsSlotsNumber = 5;
+  MeasurementManager::MemorySlot memoryMeasurementsSlots[memoryMeasurementsSlotsNumber] = {
+    MeasurementManager::MemorySlot(memoryMap::slot1_begin, memoryMap::slot1_end),
+    MeasurementManager::MemorySlot(memoryMap::slot2_begin, memoryMap::slot2_end),
+    MeasurementManager::MemorySlot(memoryMap::slot3_begin, memoryMap::slot3_end),
+    MeasurementManager::MemorySlot(memoryMap::slot4_begin, memoryMap::slot4_end),
+    MeasurementManager::MemorySlot(memoryMap::slot5_begin, memoryMap::slot5_end),
+  };
+  MeasurementManager measurementManager(&memory, memoryMeasurementsSlots, memoryMeasurementsSlotsNumber);
   Drivers::MPU6050 mpu(&Drivers::i2c1, 0xD0, akcelerometerAndGyroskopeDataReady, magnetometerDataReady, HAL_Delay, Drivers::IMUsensorIfc::RottatedAxis::X);
   MiniDronEngine engines(enginesPower, 4);
   QuatroEngineControl engineControl(&engines);
@@ -142,7 +151,7 @@ int main(void)
   PID pidH;
   double batteryRezistor = 22000;
   BatteryObserver battery(&memory, adcData, &batteryRezistor, 1, 0xfff, 3.4, 3.7);
-  AltitudeProvider altitudeProvider(1000.0);
+  AltitudeProvider altitudeProvider(nullptr, 0.3);
   DriversGroup driversGroup{
     led,
     &radio,
@@ -158,6 +167,7 @@ int main(void)
     nullptr,
     &altitudeProvider,
     &battery,
+    &measurementManager,
     [](const char* text, unsigned int size){
       while(HAL_UART_GetState(&huart1) != HAL_UART_STATE_READY);
       if(HAL_UART_Transmit(&huart1, (uint8_t*)text, size, 10) == HAL_OK)
@@ -175,7 +185,7 @@ int main(void)
       Drivers::gpio.pin(OutputList::LED_G2, !driversGroup.radio->isComunicationCorrect());
       radioParser.run();
       ahrs.run(globalStruct.angleOffsetAxisX, globalStruct.angleOffsetAxisY);
-      altitudeProvider.run(ahrs.getHorizontalAkceleration() + 10.00, fmax(ahrs.getHorizontalAkcelerationVariation(), 0.1), 0.0);
+      altitudeProvider.run();
       mainLoop(&Drivers::gpio, globalStruct, driversGroup, HAL_Delay);
       TIM3->CCR4 = enginesPower[0];
     	TIM3->CCR3 = enginesPower[1];

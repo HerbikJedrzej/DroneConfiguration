@@ -127,6 +127,15 @@ int main(void)
   led.addLED(LedsList::optionProcess, OutputList::LED_B, true);
   led.addLED(LedsList::angleGreaterThan15deg, OutputList::LED_R1, true);
   Drivers::Memory memory(&Drivers::i2c3, &Drivers::gpio, 0xA0, OutputList::MemoryWriteProtect, HAL_Delay);
+  constexpr uint8_t memoryMeasurementsSlotsNumber = 5;
+  MeasurementManager::MemorySlot memoryMeasurementsSlots[memoryMeasurementsSlotsNumber] = {
+    MeasurementManager::MemorySlot(memoryMap::slot1_begin, memoryMap::slot1_end),
+    MeasurementManager::MemorySlot(memoryMap::slot2_begin, memoryMap::slot2_end),
+    MeasurementManager::MemorySlot(memoryMap::slot3_begin, memoryMap::slot3_end),
+    MeasurementManager::MemorySlot(memoryMap::slot4_begin, memoryMap::slot4_end),
+    MeasurementManager::MemorySlot(memoryMap::slot5_begin, memoryMap::slot5_end),
+  };
+  MeasurementManager measurementManager(&memory, memoryMeasurementsSlots, memoryMeasurementsSlotsNumber);
   Drivers::nRF24SinglePlex radio(7, 0b10101110, Drivers::time, false, &Drivers::spi2, &Drivers::gpio, OutputList::RadioCE, OutputList::RadioCSN, InterruptInputList::RadioIRQ, HAL_Delay);
   Drivers::RadioParser radioParser(&radio, Drivers::RadioMode::Drone);
   Drivers::LSM6DS33 lsm6ds33(&Drivers::spi1, OutputList::SensorSS, akcelerometerAndGyroskopeDataReady, magnetometerDataReady, HAL_Delay);
@@ -146,6 +155,7 @@ int main(void)
   PID pidH;
   double batteryRezistors[3] = {10000, 22000, 33000};
   BatteryObserver battery(&memory, dataForBattery, batteryRezistors, 3, 0xfff, 3.0, 3.7);
+  AltitudeProvider altitudeProvider(nullptr, 0.3);
   DriversGroup driversGroup{
     led,
     &radio,
@@ -161,6 +171,7 @@ int main(void)
     nullptr,
     nullptr,
     &battery,
+    &measurementManager,
     [](const char* text, unsigned int size){
       while(HAL_UART_GetState(&huart1) != HAL_UART_STATE_READY);
       if(HAL_UART_Transmit(&huart1, (uint8_t*)text, size, 100) == HAL_OK)
@@ -179,6 +190,7 @@ int main(void)
       Drivers::gpio.pin(OutputList::LED_G2, driversGroup.radio->isComunicationCorrect());
       radioParser.run();
       ahrs.run(globalStruct.angleOffsetAxisX, globalStruct.angleOffsetAxisY);
+      altitudeProvider.run();
       mainLoop(&Drivers::gpio, globalStruct, driversGroup, HAL_Delay);
       TIM3->CCR1 = enginesPower[0];
     	TIM3->CCR2 = enginesPower[1];
